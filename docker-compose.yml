@@ -1,0 +1,37 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: ["5672:5672", "15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  agent2:
+    build:
+      # CHANGE THIS: Point to your GitHub repo
+      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      dockerfile: agent2.Dockerfile
+    environment:
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+    depends_on: { rabbitmq: { condition: service_healthy } }
+
+  agent3:
+    build:
+      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      dockerfile: agent3.Dockerfile
+    depends_on: { rabbitmq: { condition: service_healthy } }
+
+  agent4:
+    build:
+      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      dockerfile: agent4.Dockerfile
+    depends_on: { rabbitmq: { condition: service_healthy } }
+
+  dashboard:
+    build:
+      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      dockerfile: dashboard.Dockerfile
+    ports: ["8501:8501"]
+    depends_on: [rabbitmq, agent2, agent3, agent4]
