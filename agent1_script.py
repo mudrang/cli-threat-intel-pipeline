@@ -1,27 +1,12 @@
-import argparse
-import os
-import sys
-import re
-import json
-import pika
+import argparse, os, sys, re, json, pika
 from scapy.all import rdpcap, IP, DNS, DNSQR, DNSRR, TCP
 from scapy.layers.tls.handshake import TLSClientHello
 
 def is_private_ip(ip):
-    """Checks if an IP address is in a private range."""
-    private_ranges = [
-        re.compile("^10\."),
-        re.compile("^172\.(1[6-9]|2[0-9]|3[0-1])\."),
-        re.compile("^192\.168\.")
-    ]
+    private_ranges = [re.compile("^10\."), re.compile("^172\.(1[6-9]|2[0-9]|3[0-1])\."), re.compile("^192\.168\.")]
     return any(pattern.match(ip) for pattern in private_ranges)
 
 def process_pcap_and_publish(pcap_file_path):
-    """
-    This function contains the core logic for Agent 1. It extracts IOCs
-    from a PCAP file and publishes them to the RabbitMQ queue.
-    """
-    print(f"Agent 1 logic started for file: {pcap_file_path}")
     found_iocs = set()
     try:
         packets = rdpcap(pcap_file_path)
@@ -54,10 +39,7 @@ def process_pcap_and_publish(pcap_file_path):
                 except: continue
     except Exception as e:
         print(f"Scapy error: {e}"); return 0
-    
-    if not found_iocs: return 0
-    print(f"Found {len(found_iocs)} unique IOCs from all protocols.")
-    
+    if not found_ioc: return 0
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         channel = connection.channel()
@@ -67,20 +49,6 @@ def process_pcap_and_publish(pcap_file_path):
             message = {'ioc_value': ioc, 'source_agent': 'agent_1_ioc_extractor'}
             channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(message), properties=pika.BasicProperties(delivery_mode=2))
         connection.close()
-        print(f"Successfully published {len(found_iocs)} IOCs to the '{queue_name}' queue.")
         return len(found_iocs)
     except Exception as e:
         print(f"RabbitMQ error: {e}"); return 0
-
-# This special block ONLY runs when you execute "python agent1_script.py" directly.
-# It is ignored when the file is imported by dashboard.py.
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Agent 1 Network IOC Extractor.")
-    parser.add_argument("--file", required=True, help="The full path to the PCAP file.")
-    args = parser.parse_args()
-    if not os.path.exists(args.file):
-        print(f"Error: The file '{args.file}' was not found.")
-        sys.exit(1)
-
-    # Call the main logic function
-    process_pcap_and_publish(args.file)
