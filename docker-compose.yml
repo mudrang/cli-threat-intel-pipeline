@@ -10,8 +10,7 @@ services:
 
   agent2:
     build:
-      # CHANGE THIS: Point to your GitHub repo
-      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      context: https://github.com/mudrang/cli-threat-intel-pipeline.git
       dockerfile: agent2.Dockerfile
     environment:
       - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
@@ -19,19 +18,22 @@ services:
 
   agent3:
     build:
-      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      # This line was corrected
+      context: https://github.com/mudrang/cli-threat-intel-pipeline.git
       dockerfile: agent3.Dockerfile
     depends_on: { rabbitmq: { condition: service_healthy } }
 
   agent4:
     build:
-      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      # This line was corrected
+      context: https://github.com/mudrang/cli-threat-intel-pipeline.git
       dockerfile: agent4.Dockerfile
     depends_on: { rabbitmq: { condition: service_healthy } }
 
   dashboard:
     build:
-      context: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+      # This line was corrected
+      context: https://github.com/mudrang/cli-threat-intel-pipeline.git
       dockerfile: dashboard.Dockerfile
     ports: ["8501:8501"]
     depends_on: [rabbitmq, agent2, agent3, agent4]
